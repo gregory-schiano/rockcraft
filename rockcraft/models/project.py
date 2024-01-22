@@ -133,8 +133,8 @@ class Project(YamlModelMixin, BaseProject):
     description: str  # type: ignore[reportIncompatibleVariableOverride]
     rock_license: str = pydantic.Field(alias="license")
     platforms: dict[str, Any]
-    base: Literal["bare", "ubuntu@20.04", "ubuntu@22.04"]
-    build_base: Literal["ubuntu@20.04", "ubuntu@22.04"] | None
+    base: Literal["bare", "ubuntu@20.04", "ubuntu@22.04", "ubuntu@24.04"]
+    build_base: Literal["ubuntu@20.04", "ubuntu@22.04", "devel"] | None
     environment: dict[str, str] | None
     run_user: _RunUser
     services: dict[str, Service] | None
@@ -154,7 +154,12 @@ class Project(YamlModelMixin, BaseProject):
     def effective_base(self) -> bases.BaseName:
         """Get the Base name for craft-providers."""
         base = super().effective_base
-        name, channel = base.split("@")
+
+        if base == "devel":
+            name, channel = "ubuntu", "devel"
+        else:
+            name, channel = base.split("@")
+
         return bases.BaseName(name, channel)
 
     @pydantic.root_validator(pre=True)
