@@ -117,6 +117,8 @@ INVALID_NAME_MESSAGE = (
 
 DEPRECATED_COLON_BASES = ["ubuntu:20.04", "ubuntu:22.04"]
 
+CURRENT_DEVEL_BASE = "ubuntu@24.04"
+
 
 class NameStr(pydantic.ConstrainedStr):
     """Constrained string type only accepting valid rock names."""
@@ -201,6 +203,20 @@ class Project(YamlModelMixin, BaseProject):
         if not title:
             title = values.get("name", "")
         return cast(str, title)
+
+    @pydantic.root_validator(skip_on_failure=True)
+    @classmethod
+    def _validate_devel_base(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
+        """If 'base' is currently unstable, 'build-base' must be 'devel'."""
+        base = values.get("base")
+        build_base = values.get("build_base")
+
+        if base == CURRENT_DEVEL_BASE and build_base != "devel":
+            raise CraftValidationError(
+                f'To use the unstable base "{CURRENT_DEVEL_BASE}", '
+                '"build-base" must be "devel".'
+            )
+        return values
 
     @pydantic.validator("build_base", always=True)
     @classmethod
